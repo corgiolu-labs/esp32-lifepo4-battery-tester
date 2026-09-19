@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LiFePO4 Tester</string>
+    <string name="menu_reload">Ricarica</string>
+    <string name="menu_address">Indirizzo tester…</string>
+    <string name="address_title">Indirizzo del tester</string>
+    <string name="address_msg">Access point del tester: 192.168.4.1\nSe l\'ESP32 è collegato al Wi-Fi di casa, inserisci l\'IP mostrato nella pagina Impostazioni.</string>
+    <string name="error_connect">Tester non raggiungibile su %1$s.\n\nCollegati alla rete Wi-Fi «LiFePO4-Tester» (password: lifepo4test) e tocca qui per riprovare.\nMenu ⋮ → Indirizzo tester per cambiare IP.</string>
+</resources>

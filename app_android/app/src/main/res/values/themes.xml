@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.LiFePO4Tester" parent="Theme.AppCompat.DayNight.DarkActionBar">
+        <item name="colorPrimary">#182235</item>
+        <item name="colorPrimaryDark">#101828</item>
+        <item name="colorAccent">#34D399</item>
+        <item name="android:windowBackground">#101828</item>
+        <item name="android:statusBarColor">#101828</item>
+    </style>
+</resources>

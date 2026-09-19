@@ -1,0 +1,22 @@
+# build
+.pio/
+.vscode/
+__pycache__/
+*.pyc
+app_android/.gradle/
+app_android/build/
+app_android/app/build/
+app_android/local.properties
+app_android/.idea/
+*.iml
+
+# chiavi e file personali: mai nel repository
+*.jks
+*.keystore
+NOTE_LOCALI.md
+
+# binari rigenerabili (pubblicarli semmai come Release)
+*.apk
+tools/csv_tester/
+confronto.png
+confronto_riepilogo.csv
