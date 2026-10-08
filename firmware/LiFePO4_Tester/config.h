@@ -4,7 +4,13 @@
 //  Scheda: ESP32 D1 mini (WEMOS / LOLIN D1 mini ESP32, ESP32-WROOM-32)
 // =====================================================================
 
-#define FW_VERSION        "1.1.1"
+#define FW_VERSION        "1.3.0"
+
+// Optional local overrides that must NOT be committed (e.g. your own AP password):
+// create "config_local.h" next to this file, it is listed in .gitignore.
+#if __has_include("config_local.h")
+  #include "config_local.h"
+#endif
 
 // ---------------- Pin ----------------
 #define PIN_ADC_VBAT      34      // ADC1_CH6, solo ingresso: partitore tensione batteria
@@ -74,8 +80,12 @@
 #define CELLS_SERIES      8
 
 // ---------------- Wi-Fi ----------------
-#define AP_SSID           "LiFePO4-Tester"
-#define AP_PASS           "change-me-1234"     // minimo 8 caratteri
+#ifndef AP_SSID
+  #define AP_SSID         "LiFePO4-Tester"
+#endif
+#ifndef AP_PASS
+  #define AP_PASS         "change-me-1234"  // min 8 chars: override it in config_local.h
+#endif
 #define MDNS_NAME         "lifepo4tester"   // http://lifepo4tester.local (PC / iPhone)
 
 // ---------------- Timing ----------------

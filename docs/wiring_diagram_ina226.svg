@@ -1,93 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" font-family="Segoe UI, Arial, sans-serif" font-size="11">
  <rect width="960" height="500" fill="#ffffff"/>
- <text x="12" y="14" font-size="13" font-weight="bold" fill="#222">LiFePO4 Tester 24V 100Ah – schema di cablaggio (ESP32 D1 mini + ADS1115 + shunt 100A/75mV)</text>
+ <text x="12" y="14" font-size="13" font-weight="bold" fill="#222">LiFePO4 Tester 24V 100Ah – wiring diagram – INA226 variant (ESP32 D1 mini + INA226 + shunt 100A/75mV)</text>
 
- <!-- ===== bus B+ ===== -->
  <line x1="200" y1="30" x2="900" y2="30" stroke="#d62828" stroke-width="2"/>
- <text x="210" y="26" fill="#d62828" font-weight="bold">bus B+ (24 V) per l'elettronica</text>
+ <text x="210" y="26" fill="#d62828" font-weight="bold">B+ bus (24 V) for the electronics</text>
 
- <!-- ===== batteria ===== -->
  <rect x="40" y="200" width="120" height="240" rx="8" fill="#f4f6fa" stroke="#333" stroke-width="1.5"/>
- <text x="100" y="290" text-anchor="middle" font-weight="bold" font-size="12">BATTERIA</text>
+ <text x="100" y="290" text-anchor="middle" font-weight="bold" font-size="12">BATTERY</text>
  <text x="100" y="306" text-anchor="middle">LiFePO4 24 V</text>
  <text x="100" y="320" text-anchor="middle">100 Ah (8S + BMS)</text>
  <circle cx="160" cy="270" r="5" fill="#2255cc"/><text x="142" y="264" fill="#2255cc" font-weight="bold">B−</text>
  <circle cx="160" cy="425" r="5" fill="#d62828"/><text x="142" y="419" fill="#d62828" font-weight="bold">B+</text>
 
- <!-- ===== linea B- / shunt / carico - ===== -->
  <line x1="160" y1="270" x2="280" y2="270" stroke="#2255cc" stroke-width="3"/>
- <!-- massa comune -->
  <circle cx="230" cy="270" r="3.5" fill="#2255cc"/>
  <line x1="230" y1="270" x2="230" y2="292" stroke="#2255cc" stroke-width="2"/>
  <line x1="218" y1="292" x2="242" y2="292" stroke="#2255cc" stroke-width="2"/>
  <line x1="222" y1="298" x2="238" y2="298" stroke="#2255cc" stroke-width="2"/>
  <line x1="226" y1="304" x2="234" y2="304" stroke="#2255cc" stroke-width="2"/>
- <text x="212" y="322" text-anchor="middle" fill="#2255cc" font-size="10">massa comune (GND)</text>
- <text x="212" y="334" text-anchor="middle" fill="#2255cc" font-size="10">lato batteria dello shunt</text>
+ <text x="212" y="322" text-anchor="middle" fill="#2255cc" font-size="10">common ground (GND)</text>
+ <text x="212" y="334" text-anchor="middle" fill="#2255cc" font-size="10">battery side of the shunt</text>
 
  <rect x="280" y="245" width="160" height="50" rx="4" fill="#e9e4d8" stroke="#333" stroke-width="1.5"/>
  <text x="360" y="266" text-anchor="middle" font-weight="bold" font-size="12">SHUNT 100 A / 75 mV</text>
- <text x="360" y="282" text-anchor="middle">FL-P (0,75 mV per A)</text>
+ <text x="360" y="282" text-anchor="middle">FL-P (0.75 mV per A)</text>
  <circle cx="280" cy="270" r="6" fill="#999" stroke="#333"/><circle cx="440" cy="270" r="6" fill="#999" stroke="#333"/>
  <circle cx="330" cy="245" r="4" fill="#1a8a4a" stroke="#333"/><circle cx="400" cy="245" r="4" fill="#1a8a4a" stroke="#333"/>
   
  <line x1="440" y1="270" x2="800" y2="270" stroke="#2255cc" stroke-width="3"/>
 
- <!-- ===== linea B+ / fusibile / relè automotive / carico + ===== -->
   <line x1="160" y1="425" x2="400" y2="425" stroke="#d62828" stroke-width="3"/>
  <rect x="400" y="417" width="44" height="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
  <line x1="404" y1="425" x2="440" y2="425" stroke="#333" stroke-width="1"/>
- <text x="422" y="411" text-anchor="middle" font-size="10">FUSIBILE 25 A</text>
- <text x="422" y="446" text-anchor="middle" font-size="8" fill="#555">(poco sopra la corrente di test)</text>
+ <text x="422" y="411" text-anchor="middle" font-size="10">FUSE 25 A</text>
+ <text x="422" y="446" text-anchor="middle" font-size="8" fill="#555">(just above the test current)</text>
  <line x1="444" y1="425" x2="600" y2="425" stroke="#d62828" stroke-width="3"/>
- <!-- relè automotive -->
  <rect x="600" y="395" width="140" height="60" rx="4" fill="#fbe9d0" stroke="#333" stroke-width="1.5"/>
- <text x="670" y="418" text-anchor="middle" font-weight="bold" font-size="11">RELÈ AUTOMOTIVE</text>
- <text x="670" y="431" text-anchor="middle" font-size="9">24 V, contatto 40 A</text>
- <text x="670" y="443" text-anchor="middle" font-size="9">30 ─┤ ├─ 87 sul B+</text>
+ <text x="670" y="418" text-anchor="middle" font-weight="bold" font-size="11">AUTOMOTIVE RELAY</text>
+ <text x="670" y="431" text-anchor="middle" font-size="9">24 V coil, 40 A contact</text>
+ <text x="670" y="443" text-anchor="middle" font-size="9">30 ─┤ ├─ 87 in the B+ line</text>
  <text x="606" y="429" font-size="9" font-weight="bold">30</text>
  <text x="734" y="429" text-anchor="end" font-size="9" font-weight="bold">87</text>
  <text x="700" y="407" text-anchor="middle" font-size="9" font-weight="bold">86</text>
  <text x="730" y="407" text-anchor="middle" font-size="9" font-weight="bold">85</text>
  <line x1="740" y1="425" x2="800" y2="425" stroke="#d62828" stroke-width="3"/>
- <!-- bobina: 85 a massa -->
  <line x1="730" y1="395" x2="730" y2="378" stroke="#333" stroke-width="1.5"/>
  <line x1="730" y1="378" x2="765" y2="378" stroke="#333" stroke-width="1.5"/>
  <line x1="765" y1="378" x2="765" y2="390" stroke="#333" stroke-width="1.5"/>
  <line x1="755" y1="390" x2="775" y2="390" stroke="#333" stroke-width="1.5"/>
  <line x1="759" y1="395" x2="771" y2="395" stroke="#333" stroke-width="1.5"/>
  <line x1="763" y1="400" x2="767" y2="400" stroke="#333" stroke-width="1.5"/>
- <!-- modulo relè 3 V -->
  <rect x="600" y="300" width="140" height="58" rx="4" fill="#fbe9d0" stroke="#333" stroke-width="1.5"/>
- <text x="652" y="318" text-anchor="middle" font-weight="bold" font-size="10">MODULO RELÈ 3 V</text>
- <text x="652" y="330" text-anchor="middle" font-size="8">optoisolato, trigger alto</text>
+ <text x="652" y="318" text-anchor="middle" font-weight="bold" font-size="10">3 V RELAY MODULE</text>
+ <text x="652" y="330" text-anchor="middle" font-size="8">opto-isolated, active high</text>
  <text x="652" y="341" text-anchor="middle" font-size="8">VCC ← 3V3 ESP32, GND ← GND</text>
  <text x="706" y="311" font-size="9" font-weight="bold">IN</text>
  <text x="640" y="355" text-anchor="middle" font-size="8" font-weight="bold">COM</text>
  <text x="700" y="355" text-anchor="middle" font-size="8" font-weight="bold">NO</text>
- <!-- NO -> bobina 86 -->
  <line x1="700" y1="358" x2="700" y2="395" stroke="#e08a00" stroke-width="1.5"/>
- <!-- COM <- B+ dopo il fusibile -->
  <line x1="640" y1="358" x2="640" y2="370" stroke="#d62828" stroke-width="1.5"/>
  <line x1="640" y1="370" x2="560" y2="370" stroke="#d62828" stroke-width="1.5"/>
  <line x1="560" y1="370" x2="560" y2="425" stroke="#d62828" stroke-width="1.5"/>
  <circle cx="560" cy="425" r="3.5" fill="#d62828"/>
  <text x="600" y="366" text-anchor="middle" font-size="8" fill="#d62828">24 V</text>
- <!-- carico di test -->
  <rect x="800" y="250" width="140" height="195" rx="8" fill="#e8f0ff" stroke="#333" stroke-width="1.5"/>
- <text x="870" y="300" text-anchor="middle" font-weight="bold" font-size="12">CARICO DI TEST</text>
- <text x="870" y="318" text-anchor="middle" font-size="10">filo Ni-Cr Ø 2 mm</text>
- <text x="870" y="331" text-anchor="middle" font-size="10">~3,7 m = 1,3 Ω</text>
- <text x="870" y="344" text-anchor="middle" font-size="10">a spirale su tubo PVC</text>
- <text x="870" y="357" text-anchor="middle" font-size="10">immerso in ≥ 50 L acqua</text>
+ <text x="870" y="300" text-anchor="middle" font-weight="bold" font-size="12">TEST LOAD</text>
+ <text x="870" y="318" text-anchor="middle" font-size="10">Ni-Cr wire Ø 2 mm</text>
+ <text x="870" y="331" text-anchor="middle" font-size="10">~3.7 m = 1.3 Ω</text>
+ <text x="870" y="344" text-anchor="middle" font-size="10">coiled on a PVC pipe</text>
+ <text x="870" y="357" text-anchor="middle" font-size="10">immersed in ≥ 50 L of water</text>
  <text x="870" y="374" text-anchor="middle" font-size="11" font-weight="bold" fill="#d62828">≈ 20 A · 512 W</text>
- <text x="870" y="388" text-anchor="middle" font-size="9" fill="#555">(0,2C → ~5 h di test)</text>
- <text x="870" y="404" text-anchor="middle" font-size="8" fill="#555">capi con capicorda a vite</text>
- <text x="870" y="414" text-anchor="middle" font-size="8" fill="#555">fuori dall'acqua</text>
+ <text x="870" y="388" text-anchor="middle" font-size="9" fill="#555">(0.2C → ~5 h test)</text>
+ <text x="870" y="404" text-anchor="middle" font-size="8" fill="#555">ends on screw lugs,</text>
+ <text x="870" y="414" text-anchor="middle" font-size="8" fill="#555">kept out of the water</text>
  <circle cx="800" cy="425" r="5" fill="#d62828"/><text x="808" y="436" fill="#d62828" font-weight="bold" font-size="10">+</text>
  <circle cx="800" cy="270" r="5" fill="#2255cc"/><text x="808" y="281" fill="#2255cc" font-weight="bold" font-size="10">−</text>
 
-<!-- ===== derivazione B+ verso bus (con fusibile piccolo e scavalco) ===== -->
  <circle cx="200" cy="425" r="3.5" fill="#d62828"/>
  <line x1="200" y1="425" x2="200" y2="375" stroke="#d62828" stroke-width="2"/>
  <rect x="192" y="345" width="16" height="30" fill="#fff" stroke="#333" stroke-width="1.5"/>
@@ -98,40 +86,33 @@
  <line x1="200" y1="262" x2="200" y2="30" stroke="#d62828" stroke-width="2"/>
  <circle cx="200" cy="30" r="3.5" fill="#d62828"/>
 
- <!-- ===== INA226 ===== -->
  <rect x="300" y="110" width="170" height="110" rx="6" fill="#e8f0ff" stroke="#333" stroke-width="1.5"/>
- <text x="375" y="150" text-anchor="middle" font-weight="bold" font-size="13">ADS1115</text>
- <text x="375" y="165" text-anchor="middle" font-size="10">modulo 16 bit, 4 canali, I2C</text>
- <text x="375" y="178" text-anchor="middle" font-size="10">ADDR a GND → 0x48</text>
- <text x="375" y="191" text-anchor="middle" font-size="10">A1 non usato (guasto), ALRT libero</text>
- <!-- VBS -->
- <line x1="450" y1="110" x2="450" y2="100" stroke="#333" stroke-width="1.5"/>
- <line x1="450" y1="100" x2="600" y2="100" stroke="#333" stroke-width="1.5"/>
- <circle cx="600" cy="100" r="3" fill="#333"/>
- <text x="450" y="124" text-anchor="middle" font-size="10" font-weight="bold">A2</text>
- <text x="525" y="96" text-anchor="middle" font-size="9" fill="#555">nodo partitore</text>
- <!-- IN+ / IN- -->
+ <text x="375" y="150" text-anchor="middle" font-weight="bold" font-size="13">INA226</text>
+ <text x="375" y="165" text-anchor="middle" font-size="10">CJMCU-226 module</text>
+ <text x="375" y="178" text-anchor="middle" font-size="10" fill="#b00">remove the on-board R100!</text>
+ <text x="375" y="191" text-anchor="middle" font-size="10">I2C address 0x40</text>
+ <line x1="450" y1="110" x2="450" y2="30" stroke="#d62828" stroke-width="1.5"/>
+ <circle cx="450" cy="30" r="3.5" fill="#d62828"/>
+ <text x="450" y="124" text-anchor="middle" font-size="10" font-weight="bold">VBS</text>
  <line x1="330" y1="220" x2="330" y2="245" stroke="#1a8a4a" stroke-width="2"/>
  <line x1="400" y1="220" x2="400" y2="245" stroke="#1a8a4a" stroke-width="2"/>
- <text x="330" y="214" text-anchor="middle" font-size="10" font-weight="bold">A3</text>
- <text x="400" y="214" text-anchor="middle" font-size="10" font-weight="bold">A0</text>
- <text x="322" y="233" text-anchor="end" font-size="9" fill="#1a8a4a">lato batteria</text>
- <text x="408" y="233" font-size="9" fill="#1a8a4a">lato carico</text>
- <!-- I2C + alimentazione -->
+ <text x="330" y="214" text-anchor="middle" font-size="10" font-weight="bold">IN−</text>
+ <text x="400" y="214" text-anchor="middle" font-size="10" font-weight="bold">IN+</text>
+ <text x="322" y="233" text-anchor="end" font-size="9" fill="#1a8a4a">battery side</text>
+ <text x="408" y="233" font-size="9" fill="#1a8a4a">load side</text>
  <line x1="470" y1="140" x2="560" y2="140" stroke="#c00" stroke-width="1.5"/>
  <line x1="470" y1="160" x2="560" y2="160" stroke="#333" stroke-width="1.5"/>
  <line x1="470" y1="180" x2="560" y2="180" stroke="#7a3fb5" stroke-width="1.5"/>
  <line x1="470" y1="200" x2="560" y2="200" stroke="#7a3fb5" stroke-width="1.5"/>
- <text x="466" y="144" text-anchor="end" font-size="10" font-weight="bold">VDD</text>
+ <text x="466" y="144" text-anchor="end" font-size="10" font-weight="bold">VCC</text>
  <text x="466" y="164" text-anchor="end" font-size="10" font-weight="bold">GND</text>
  <text x="466" y="184" text-anchor="end" font-size="10" font-weight="bold">SDA</text>
  <text x="466" y="204" text-anchor="end" font-size="10" font-weight="bold">SCL</text>
- <text x="515" y="136" text-anchor="middle" font-size="9">3,3 V</text>
+ <text x="515" y="136" text-anchor="middle" font-size="9">3.3 V</text>
  <text x="515" y="156" text-anchor="middle" font-size="9">GND</text>
  <text x="515" y="176" text-anchor="middle" font-size="9">SDA</text>
  <text x="515" y="196" text-anchor="middle" font-size="9">SCL</text>
 
- <!-- ===== ESP32 ===== -->
  <rect x="560" y="110" width="220" height="110" rx="6" fill="#e6f7ec" stroke="#333" stroke-width="1.5"/>
  <text x="690" y="152" text-anchor="middle" font-weight="bold" font-size="13">ESP32 D1 mini</text>
  <text x="690" y="167" text-anchor="middle" font-size="10">WEMOS / LOLIN, ESP32-WROOM-32</text>
@@ -146,45 +127,41 @@
  <text x="776" y="144" text-anchor="end" font-size="10" font-weight="bold">5V</text>
  <text x="776" y="164" text-anchor="end" font-size="10" font-weight="bold">GND</text>
 
- <!-- partitore -->
  <circle cx="600" cy="30" r="3.5" fill="#d62828"/>
  <line x1="600" y1="30" x2="600" y2="40" stroke="#d62828" stroke-width="1.5"/>
  <rect x="594" y="40" width="12" height="30" fill="#fff" stroke="#333" stroke-width="1.5"/>
  <text x="612" y="58" font-size="10">R1 120 kΩ 1%</text>
  <line x1="600" y1="70" x2="600" y2="110" stroke="#333" stroke-width="1.5"/>
  <circle cx="600" cy="84" r="3" fill="#333"/>
- <line x1="600" y1="84" x2="610" y2="84" stroke="#333" stroke-width="1.5"/>
- <rect x="610" y="78" width="34" height="12" fill="#fff" stroke="#333" stroke-width="1.5"/>
- <text x="627" y="74" text-anchor="middle" font-size="10">R2 10 kΩ 1%</text>
- <line x1="644" y1="84" x2="658" y2="84" stroke="#333" stroke-width="1.5"/>
- <line x1="658" y1="84" x2="658" y2="96" stroke="#333" stroke-width="1.5"/>
- <line x1="648" y1="96" x2="668" y2="96" stroke="#333" stroke-width="1.5"/>
- <line x1="652" y1="101" x2="664" y2="101" stroke="#333" stroke-width="1.5"/>
- <line x1="656" y1="106" x2="660" y2="106" stroke="#333" stroke-width="1.5"/>
- <text x="590" y="62" text-anchor="end" font-size="9" fill="#555">100 nF nodo→GND</text>
+ <line x1="600" y1="84" x2="590" y2="84" stroke="#333" stroke-width="1.5"/>
+ <rect x="556" y="78" width="34" height="12" fill="#fff" stroke="#333" stroke-width="1.5"/>
+ <text x="573" y="74" text-anchor="middle" font-size="10">R2 10 kΩ 1%</text>
+ <line x1="556" y1="84" x2="540" y2="84" stroke="#333" stroke-width="1.5"/>
+ <line x1="540" y1="84" x2="540" y2="96" stroke="#333" stroke-width="1.5"/>
+ <line x1="530" y1="96" x2="550" y2="96" stroke="#333" stroke-width="1.5"/>
+ <line x1="534" y1="101" x2="546" y2="101" stroke="#333" stroke-width="1.5"/>
+ <line x1="538" y1="106" x2="542" y2="106" stroke="#333" stroke-width="1.5"/>
+ <text x="548" y="62" text-anchor="end" font-size="9" fill="#555">100 nF GPIO34→GND</text>
 
- <!-- relè drive -->
  <line x1="700" y1="220" x2="700" y2="262" stroke="#e08a00" stroke-width="1.5"/>
  <path d="M700,262 A8,8 0 0 1 700,278" fill="none" stroke="#e08a00" stroke-width="1.5"/>
  <line x1="700" y1="278" x2="700" y2="300" stroke="#e08a00" stroke-width="1.5"/>
  <text x="706" y="292" font-size="8" fill="#e08a00">GPIO26 → IN</text>
 
- <!-- ===== power bank USB (alimentazione principale) ===== -->
  <rect x="700" y="45" width="115" height="52" rx="8" fill="#e6f7ec" stroke="#333" stroke-width="1.5"/>
  <text x="757" y="63" text-anchor="middle" font-weight="bold" font-size="11">POWER BANK</text>
- <text x="757" y="77" text-anchor="middle" font-size="10">USB 5 V (per cellulare)</text>
- <text x="757" y="90" text-anchor="middle" font-size="9" fill="#555">10.000 mAh ≈ 30–40 h</text>
+ <text x="757" y="77" text-anchor="middle" font-size="10">USB 5 V (phone power bank)</text>
+ <text x="757" y="90" text-anchor="middle" font-size="9" fill="#555">10,000 mAh ≈ 30–40 h</text>
  <line x1="700" y1="71" x2="675" y2="71" stroke="#333" stroke-width="2.5"/>
  <line x1="675" y1="71" x2="675" y2="110" stroke="#333" stroke-width="2.5"/>
  <text x="675" y="124" text-anchor="middle" font-size="10" font-weight="bold">USB</text>
 
- <!-- ===== buck (alternativa) ===== -->
  <rect x="820" y="110" width="120" height="110" rx="6" fill="#fffaf0" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3"/>
- <text x="885" y="155" text-anchor="middle" font-weight="bold" font-size="11" fill="#666">ALTERNATIVA</text>
+ <text x="885" y="155" text-anchor="middle" font-weight="bold" font-size="11" fill="#666">ALTERNATIVE</text>
  <text x="885" y="169" text-anchor="middle" font-weight="bold" font-size="11" fill="#666">BUCK XL4015/LM2596</text>
- <text x="885" y="182" text-anchor="middle" font-size="9" fill="#666">24 V → 5 V, solo se NON</text>
- <text x="885" y="193" text-anchor="middle" font-size="9" fill="#666">usi il power bank</text>
- <text x="885" y="205" text-anchor="middle" font-size="8" fill="#b00">non MP1584 (max 28 V)</text>
+ <text x="885" y="182" text-anchor="middle" font-size="9" fill="#666">24 V → 5 V, only if you do</text>
+ <text x="885" y="193" text-anchor="middle" font-size="9" fill="#666">NOT use the power bank</text>
+ <text x="885" y="205" text-anchor="middle" font-size="8" fill="#b00">not MP1584 (28 V max)</text>
  <text x="900" y="124" text-anchor="middle" font-size="10" font-weight="bold" fill="#666">IN+</text>
  <text x="925" y="214" text-anchor="middle" font-size="10" font-weight="bold" fill="#666">IN−</text>
  <text x="824" y="144" font-size="10" font-weight="bold" fill="#666">OUT+</text>
@@ -199,10 +176,9 @@
  <line x1="919" y1="245" x2="931" y2="245" stroke="#333" stroke-width="1.5"/>
  <line x1="923" y1="250" x2="927" y2="250" stroke="#333" stroke-width="1.5"/>
 
-<!-- ===== note ===== -->
- <text x="12" y="478" font-size="11" fill="#222">⏚ Tutte le masse (GND ESP32, GND sensore, GND modulo relè, pin 85 del relè automotive, IN− del buck, R2) vanno al <tspan font-weight="bold">B− lato batteria</tspan>, cioè PRIMA dello shunt.</text>
- <text x="12" y="494" font-size="11" fill="#222">Cavi sense corti e intrecciati, presi dalle viti piccole dello shunt (ingresso + lato carico, ingresso − lato batteria). Cavi di potenza 4 mm² per 20 A. Opzionale: NTC 10 kΩ su GPIO35 (HARDWARE.md).</text>
- <text x="12" y="510" font-size="11" fill="#222">Alimentazione: power bank nella porta USB (consigliato) OPPURE buck XL4015/LM2596 regolato a 5,0 V prima di collegarlo, mai entrambi. ADS1115 e modulo relè dal pin 3V3.</text>
- <text x="12" y="526" font-size="11" fill="#222">Relè: il modulo 3 V da solo regge ≤ 5 A in DC, per i 20 A pilota la bobina del relè automotive (86 dal contatto NO, 85 a massa). Contatti 30/87 in serie al B+ del carico.</text>
- <text x="12" y="542" font-size="11" fill="#222">Carico: 512 W scaldano 50 L di ~9 °C all'ora; con 10 L l'acqua bolle in 1,5 h. Acqua demineralizzata, secchio di plastica, stanza aerata. Corrente positiva = scarica (altrimenti "Inverti segno").</text>
+ <text x="12" y="478" font-size="11" fill="#222">⏚ All grounds (ESP32, sensor, relay module, pin 85 of the automotive relay, buck IN−, R2) go to <tspan font-weight="bold">B− on the battery side</tspan>, i.e. BEFORE the shunt.</text>
+ <text x="12" y="494" font-size="11" fill="#222">Sense wires short and twisted, taken from the small screws of the shunt (+ input on the load side, − input on the battery side). Power cables 4 mm² for 20 A. Optional: 10 kΩ NTC on GPIO35 (see HARDWARE.md).</text>
+ <text x="12" y="510" font-size="11" fill="#222">Power: a power bank on the USB port (recommended) OR an XL4015/LM2596 buck set to 5.0 V before connecting it, never both. ADS1115 and relay module are fed from the 3V3 pin.</text>
+ <text x="12" y="526" font-size="11" fill="#222">Relay: the 3 V module alone handles ≤ 5 A DC; for 20 A it drives the coil of the automotive relay (86 from the NO contact, 85 to ground). Contacts 30/87 in series with the load B+.</text>
+ <text x="12" y="542" font-size="11" fill="#222">Load: 512 W heat 50 L by ~9 °C per hour; 10 L would boil in 1.5 h. Demineralised water, plastic tub, ventilated room. Positive current = discharge (otherwise use "Inverti segno" = invert sign).</text>
 </svg>

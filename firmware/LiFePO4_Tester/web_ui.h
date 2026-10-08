@@ -177,7 +177,7 @@ table.hist tr.bad td{color:#fca5a5}table.hist tr.best td{color:#6ee7b7}table.his
  </div>
  <h2>Storico e confronto batterie</h2>
  <div class="card">
-  <p class="note">Ordinato per Ah erogati. In rosso: BMS staccato <b>in anticipo</b> (V fine oltre 1,5 V sopra il cutoff) oppure meno del 90 % della migliore. "BMS a fine" in giallo è normale: a fine scarica il BMS può intervenire un istante prima del tester. "V fine" alta (23–25 V) = una cella debole. Il cestino 🗑 elimina solo quella riga (con conferma).</p>
+  <p class="note">Ordinato per Ah erogati. In rosso: BMS staccato <b>in anticipo</b> (V fine oltre 1,5 V sopra il cutoff) oppure meno del 90 % della migliore. "BMS a fine" in giallo è normale: a fine scarica il BMS può intervenire un istante prima del tester. "V fine" alta (23–25 V) = una cella debole. Il cestino 🗑 elimina solo quella riga (con conferma), la matita ✏ rinomina il test.</p>
   <div style="overflow-x:auto"><table class="hist" id="hist"><thead><tr><th>Batteria</th><th>Esito</th><th>Ah</th><th>%</th><th>V fine</th><th>R mΩ</th><th>Ø A</th><th>CSV</th><th></th></tr></thead><tbody></tbody></table></div>
   <div class="btns" style="margin-top:10px">
    <button class="btn" onclick="loadHist()">↻ Aggiorna</button>
@@ -231,7 +231,7 @@ table.hist tr.bad td{color:#fca5a5}table.hist tr.best td{color:#6ee7b7}table.his
  </div></div>
  <h2>Wi-Fi di casa (opzionale)</h2>
  <div class="card">
-  <p class="note">Se inserisci la rete di casa, l'ESP32 si collega anche lì e il telefono resta con internet. L'access point <b>LiFePO4-Tester</b> rimane sempre attivo (password: lifepo4test).</p>
+  <p class="note">Se inserisci la rete di casa, l'ESP32 si collega anche lì e il telefono resta con internet. L'access point <b>LiFePO4-Tester</b> rimane sempre attivo.</p>
   <div class="row"><label>SSID</label><input type="text" id="ssid" class="wide" autocapitalize="off"></div>
   <div class="row"><label>Password</label><input type="password" id="pass" class="wide"></div>
   <div class="row"><label>Stato</label><span class="mono" id="stainfo">--</span></div>
@@ -281,10 +281,11 @@ let lastState='';
 async function loadHist(){const b=(lastBtn&&lastBtn.textContent.indexOf('Aggiorna')>=0)?lastBtn:null;btnState(b,'sending');try{const h=await (await fetch(base()+'/api/history',{cache:'no-store'})).json();btnState(b,'ok');const cap=parseFloat($('cap').value)||100;
  h.sort((a,b)=>b.ah-a.ah);const best=h.length?h[0].ah:0;const cut=parseFloat($('cutoff').value)||20,EARLY=1.5;
  $('hist').querySelector('tbody').innerHTML=h.map((r,k)=>{const early=r.reason==='bms'&&r.vend>cut+EARLY;const bad=early||(best>0&&r.ah<0.9*best);const cls=bad?'bad':(k===0?'best':'');
-  return '<tr class="'+cls+'"><td>'+(r.name||'?')+'<br><span style="font-weight:400;color:var(--mut)">'+dstr(r.ts)+'</span></td><td><span class="tag '+(r.reason==='bms'?(early?'bms':'bmsok'):(r.reason==='cutoff'?'ok':''))+'">'+(r.reason==='bms'?(early?'BMS presto':'BMS a fine'):(r.reason==='cutoff'?'OK':r.reason))+'</span></td><td>'+f(r.ah,1)+'</td><td>'+f(r.ah/cap*100,0)+'</td><td>'+f(r.vend,1)+'</td><td>'+(r.rint?f(r.rint*1000,1):'--')+'</td><td>'+f(r.iavg,1)+'</td><td><a href="'+base()+'/api/log?id='+r.id+'" target="_blank">⬇</a></td><td><a href="#" title="elimina solo questo test" onclick="delTest('+r.id+',\''+String(r.name||'').replace(/[\\']/g,'')+'\',\''+dstr(r.ts)+'\');return false;" style="color:var(--red)">🗑</a></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--mut)">nessun test</td></tr>';
+  return '<tr class="'+cls+'"><td>'+(r.name||'?')+' <a href="#" title="rinomina" onclick="renTest('+r.id+',\''+String(r.name||'').replace(/[\\']/g,'')+'\');return false;" style="text-decoration:none">✏</a><br><span style="font-weight:400;color:var(--mut)">'+dstr(r.ts)+'</span></td><td><span class="tag '+(r.reason==='bms'?(early?'bms':'bmsok'):(r.reason==='cutoff'?'ok':''))+'">'+(r.reason==='bms'?(early?'BMS presto':'BMS a fine'):(r.reason==='cutoff'?'OK':r.reason))+'</span></td><td>'+f(r.ah,1)+'</td><td>'+f(r.ah/cap*100,0)+'</td><td>'+f(r.vend,1)+'</td><td>'+(r.rint?f(r.rint*1000,1):'--')+'</td><td>'+f(r.iavg,1)+'</td><td><a href="'+base()+'/api/log?id='+r.id+'" target="_blank">⬇</a></td><td><a href="#" title="elimina solo questo test" onclick="delTest('+r.id+',\''+String(r.name||'').replace(/[\\']/g,'')+'\',\''+dstr(r.ts)+'\');return false;" style="color:var(--red)">🗑</a></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--mut)">nessun test</td></tr>';
  window._histN=h.length;
  }catch(e){btnState(b,'err');}}
 // --- eliminazione singolo test / storico completo ---
+async function renTest(id,name){const n=prompt('Nuovo nome per il test "'+name+'":',name);if(n===null)return;const v=n.trim();if(!v||v===name)return;await cmd('/api/history','cmd=rename&id='+id+'&name='+encodeURIComponent(v),'Rinominato in "'+v+'"');loadHist();}
 async function delTest(id,name,date){if(!confirm('Eliminare SOLO il test "'+name+'" ('+date+')?\nGli altri test restano.'))return;await cmd('/api/history','cmd=delete&id='+id,'Test "'+name+'" eliminato');loadHist();}
 function clearHist(){const n=window._histN||0;if(!n){toast('Lo storico è già vuoto',true);return;}if(!confirm('ATTENZIONE: stai per cancellare TUTTI i '+n+' test dello storico con i loro CSV.\nPer eliminarne uno solo usa il cestino sulla riga.\n\nCancellare tutto?'))return;if(!confirm('Confermi definitivamente? Non si può annullare.'))return;cmd('/api/history','cmd=clear','Storico cancellato');cmd('/api/log','cmd=clear','');setTimeout(loadHist,500);}
 // --- grafico di confronto: una curva per ogni test con CSV disponibile ---

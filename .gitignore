@@ -13,7 +13,10 @@ app_android/.idea/
 # chiavi e file personali: mai nel repository
 *.jks
 *.keystore
+keystore.properties
+app_android/tester.properties
 NOTE_LOCALI.md
+firmware/LiFePO4_Tester/config_local.h
 
 # binari rigenerabili (pubblicarli semmai come Release)
 *.apk

@@ -1,47 +1,62 @@
-# App Android – LiFePO4 Tester
+# Android app – LiFePO4 Tester
 
-App Android nativa (Kotlin) che mostra a schermo intero la web-app servita dall'ESP32, con icona propria,
-senza barra del browser, e ricorda l'indirizzo del tester (192.168.4.1 oppure l'IP di casa).
+> 🇮🇹 Versione italiana: [README.it.md](README.it.md)
 
-**L'APK già compilato e firmato è nella cartella principale: `LiFePO4_Tester.apk`** (circa 2,6 MB, Android 8.0 o superiore).
+A tiny native Android app (plain Java, ~25 kB) that shows the web app served by the ESP32 full screen and finds the tester by itself. It is optional: the tester works from any browser.
 
-## Installare l'APK sul Galaxy A16
+What it adds over a browser tab:
 
-1. Copia `LiFePO4_Tester.apk` sul telefono (cavo USB, Quick Share, Google Drive, o inviatelo via e-mail/WhatsApp).
-2. Sul telefono apri il file con "Archivio" (File personali). Alla prima volta Android chiede di **consentire l'installazione da questa origine**: attiva e conferma.
-3. Se compare "App bloccata da Play Protect" (succede con le app non pubblicate sullo store) tocca **Maggiori dettagli → Installa comunque**.
-4. Apri l'app: cerca di collegarsi a `http://192.168.4.1/`. Collega prima il telefono al Wi-Fi **LiFePO4-Tester** (password `lifepo4test`).
+* **Finds the tester**: at start it tries, in parallel, the last working address, the build-time default address, `lifepo4tester.local`, the tester's access point (192.168.4.1) and mDNS discovery. The first one that answers `/api/status` is opened.
+* **Picks the right network**: every address is tried on Android's default network (home Wi-Fi, or mobile data + a VPN such as Tailscale when you are away) and also forced onto Wi-Fi, because the tester's own access point has no internet and Android would otherwise route around it.
+* **Updates itself**: the APK is hosted on the tester. When the tester holds a newer `versionCode`, the app offers to download and install it, no cable needed.
+* **Saves CSV logs** to the phone's Download folder.
+* Back button: page history, then a small menu (*Ricarica* = reload, *Cambia indirizzo* = change address, *Esci* = exit).
 
-Con il telefono collegato al PC via USB e "Debug USB" attivo, in alternativa:
+## Building
+
+No Gradle: the script uses only the Android SDK tools (aapt2, javac, d8, zipalign, apksigner). You need the Android SDK and a JDK (Android Studio provides both).
+
+```bash
+pwsh app_android/build.ps1 -VersionCode 7 -VersionName 1.5.1
+```
+
+Output: `app_android/build/LiFePO4_Tester.apk`, also copied to the repository root. Increase `VersionCode` at every release: it is what the self-update compares.
+
+Optional local files, both ignored by Git:
+
+| File | Content | Effect |
+|------|---------|--------|
+| `app_android/tester.properties` | `defaultAddress=192.168.1.50` | address tried on a fresh install (default: 192.168.4.1) |
+| `app_android/keystore.properties` | `storePassword=...`, `keyPassword=...`, optional `keyAlias=...` | signs with your keystore `app_android/app/lifepo4tester.jks` (or `app_android/lifepo4tester.jks`) |
+
+Without a keystore the script creates a local one. Keep the keystore: Android only updates an installed app if the new APK is signed with the same key.
+
+## First installation
+
+Copy the APK to the phone and open it, or with USB debugging enabled:
+
 ```bash
 adb install -r LiFePO4_Tester.apk
 ```
 
-## Uso
-* Menu ⋮ → **Indirizzo tester…** per inserire l'IP di casa dell'ESP32 (quello mostrato nella pagina Impostazioni del tester).
-* Menu ⋮ → **Ricarica** se la pagina non risponde.
-* Se il tester non è raggiungibile compare un messaggio: collegati alla rete Wi-Fi `LiFePO4-Tester` e tocca lo schermo per riprovare.
-* L'app forza il proprio traffico sulla rete Wi-Fi (dalla versione 1.1), quindi funziona anche se Android tiene i dati mobili come rete predefinita.
-* **VPN (es. Tailscale) e access point del tester**: quando il telefono è collegato direttamente alla rete `LiFePO4-Tester` (192.168.4.1), una VPN sempre attiva cattura il traffico e la pagina resta bianca: lì va spenta. Con l'ESP32 sulla rete di casa il problema **non c'è** (verificato con Tailscale acceso).
+Android asks to allow installs from this source; Play Protect may ask for confirmation (*More details → Install anyway*). On Samsung phones *Auto Blocker* (Settings → Security and privacy) blocks both sideloading and USB debugging until it is switched off.
 
-## Ricompilare (se modifichi qualcosa)
+## Publishing an update (self-update)
 
-Il progetto è completo: si apre direttamente in **Android Studio** (*File → Open* → cartella `app_android`), poi *Build → Generate App Bundles or APKs → Generate APKs*.
+Upload the new APK to the tester (refused while a test is running):
 
-Da riga di comando, con Android Studio installato (usa il suo Java):
 ```bash
-set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
-gradle --no-daemon assembleRelease
+curl -F "apk=@app_android/build/LiFePO4_Tester.apk" "http://<tester-ip>/api/app/upload?version=7"
 ```
-L'APK esce in `app/build/outputs/apk/release/app-release.apk`.
 
-Versione app: 1.2 (versionCode 3). Versioni usate: Gradle 8.11.1, Android Gradle Plugin 8.9.2, Kotlin 2.1.20, compileSdk 36, minSdk 26.
+At the next start every phone compares its own `versionCode` with `GET /api/app` and, if the tester's is higher, shows *Aggiornamento disponibile* (update available). The first time Android asks to allow this app to install apps (*Settings → allow from this source*); after that it is one tap.
 
-## Firma
-L'APK si firma con un keystore personale `app/lifepo4tester.jks` (alias `lifepo4`), che **non è incluso nel repository**. Per crearne uno: `keytool -genkeypair -keystore app/lifepo4tester.jks -alias lifepo4 -keyalg RSA -keysize 2048 -validity 10000`, poi adeguare le password in `app/build.gradle.kts`.
-Serve per installare aggiornamenti sopra la versione già presente sul telefono: se la perdi, dovrai disinstallare l'app prima di installare una nuova build. È una chiave per uso personale, non per il Play Store.
+The web UI itself lives in the firmware, so it changes with every firmware update and needs no app release.
 
-## Note tecniche
-* `usesCleartextTraffic="true"` e `network_security_config.xml` servono perché il tester parla HTTP in chiaro sulla rete locale.
-* Unico permesso richiesto: INTERNET.
-* `local.properties` contiene il percorso dell'SDK su questo PC; Android Studio lo rigenera da solo su un altro PC.
+## Technical notes
+
+* Package `com.lifepo4tester.app`, minSdk 26, plain `Activity` + `WebView`, no libraries.
+* Permissions: INTERNET, ACCESS/CHANGE_NETWORK_STATE (network selection), REQUEST_INSTALL_PACKAGES (self-update).
+* `usesCleartextTraffic="true"` because the tester speaks plain HTTP on the local network.
+* A `WebChromeClient` is set on the WebView: without it JavaScript `confirm()` / `prompt()` are ignored and the start/stop and rename buttons would silently do nothing.
+* An always-on VPN must be switched off only when the phone is connected directly to the tester's access point; on the home network and away from home (with a subnet route to the tester) it is what makes the app work.

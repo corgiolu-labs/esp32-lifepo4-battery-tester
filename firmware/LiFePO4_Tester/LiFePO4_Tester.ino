@@ -21,6 +21,7 @@
 #include <LittleFS.h>
 #include <Update.h>
 #include <math.h>
+#include <esp_system.h>
 #include "config.h"
 #include "web_ui.h"
 #include "web_icons.h"
@@ -73,7 +74,20 @@ struct LastTest {
 #define HISTORY_FILE   "/history.jsonl"
 #define HISTORY_MAX    60     // righe conservate nello storico
 #define CSV_KEEP       12     // file CSV conservati (gli altri vengono cancellati)
+#define NOLOAD_START_S 300u   // test annullato se entro 5 min dall'avvio non si vede corrente
+#define NOLOAD_STOP_S  120u   // test chiuso se il carico sparisce per 2 min
 static char csvPath[16];     // "/t<id>.csv" del test corrente
+static bool testResumed = false;   // il test in corso e' stato ripreso dopo un riavvio
+static const char *bootReasonStr() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:  return "poweron";
+    case ESP_RST_SW:       return "sw";
+    case ESP_RST_PANIC:    return "panic";
+    case ESP_RST_INT_WDT:  case ESP_RST_TASK_WDT: case ESP_RST_WDT: return "wdt";
+    case ESP_RST_BROWNOUT: return "brownout";
+    default:               return "other";
+  }
+}
 
 enum AlarmBit : uint16_t { AL_VLOW = 1, AL_VHIGH = 2, AL_IHIGH = 4, AL_THIGH = 8, AL_INA = 16, AL_RANGE = 32, AL_ADC = 64 };
 uint16_t alarms = 0;
@@ -308,6 +322,56 @@ void logLine() {
   f.close();
   test.logN++;
   test.lastLog = millis();
+  static uint32_t lastRunSave = 0;
+  if (test.state == T_RUN && millis() - lastRunSave >= 30000UL) { lastRunSave = millis(); saveRun(); }
+}
+
+// ===================================================================== stato del test in NVS
+// Il test in corso vive in RAM: un buco di alimentazione lo perdeva (27/09/2026, 55 Ah buttati).
+// Ogni 30 s lo stato viene salvato in NVS e all'avvio, se era attivo, il test riprende da dove
+// era: stesso id, stesso CSV (in append), Ah/Wh accumulati, relè richiuso. Il tempo di fermo
+// non viene contato e, ovviamente, la corrente durante il fermo non e' stata misurata.
+void saveRun() {
+  prefs.begin("run", false);
+  prefs.putBool("act", true);
+  prefs.putUInt("id", test.id);     prefs.putUInt("ts", test.ts);     prefs.putUInt("el", test.elapsed);
+  prefs.putUInt("logn", test.logN); prefs.putUInt("in", test.iN);
+  prefs.putFloat("ah", test.ah);    prefs.putFloat("wh", test.wh);
+  prefs.putFloat("vs", test.vstart); prefs.putFloat("vmin", test.vmin);
+  prefs.putFloat("isum", test.iSum); prefs.putFloat("imax", test.imax);
+  prefs.putFloat("r", isnan(test.rint) ? -1.0f : test.rint);
+  prefs.putBool("saw", test.sawLoad);
+  prefs.putString("name", test.name);
+  prefs.end();
+}
+void clearRun() { prefs.begin("run", false); prefs.putBool("act", false); prefs.end(); }
+bool resumeRun() {
+  prefs.begin("run", true);
+  bool act = prefs.getBool("act", false);
+  if (!act) { prefs.end(); return false; }
+  test = Test();
+  test.id = prefs.getUInt("id", 0);     test.ts = prefs.getUInt("ts", 0);   test.elapsed = prefs.getUInt("el", 0);
+  test.logN = prefs.getUInt("logn", 0); test.iN = prefs.getUInt("in", 0);
+  test.ah = prefs.getFloat("ah", 0);    test.wh = prefs.getFloat("wh", 0);
+  test.vstart = prefs.getFloat("vs", 0); test.vmin = prefs.getFloat("vmin", 0);
+  test.iSum = prefs.getFloat("isum", 0); test.imax = prefs.getFloat("imax", 0);
+  float r = prefs.getFloat("r", -1.0f);  test.rint = (r < 0) ? NAN : r;
+  test.sawLoad = prefs.getBool("saw", false);
+  prefs.getString("name", test.name, sizeof(test.name));
+  prefs.end();
+  if (!test.id) { clearRun(); return false; }
+  test.state  = T_RUN;
+  test.tStart = millis() - test.elapsed * 1000UL;
+  test.vOcv = test.vLast = m.v;
+  if (test.vmin <= 0 || m.v < test.vmin) test.vmin = m.v;
+  snprintf(csvPath, sizeof(csvPath), "/t%lu.csv", (unsigned long)test.id);
+  File f = LittleFS.open(csvPath, FILE_APPEND);
+  if (f) { f.printf("# ripreso dopo riavvio (%s) a %lu s, fermo non misurato\n", bootReasonStr(), (unsigned long)test.elapsed); f.close(); }
+  if (cfg.relayEn) setRelay(true);
+  testResumed = true;
+  Serial.printf("[TEST] #%lu '%s' RIPRESO dopo riavvio (%s): %.2f Ah, %lu s\n",
+                (unsigned long)test.id, test.name, bootReasonStr(), test.ah, (unsigned long)test.elapsed);
+  return true;
 }
 
 // ===================================================================== test di capacità
@@ -337,6 +401,7 @@ void testEnd(const char *reason) {
   test.state = T_DONE;
   test.vend  = (strcmp(reason, "bms") == 0) ? test.vLast : m.v;   // per lo stacco BMS conta la tensione prima del crollo
   strncpy(test.reason, reason, sizeof(test.reason) - 1);
+  clearRun();
   logLine();
   last.ah = test.ah; last.wh = test.wh; last.dur = test.elapsed;
   last.vstart = test.vstart; last.vend = test.vend;
@@ -465,8 +530,14 @@ void tick() {
   if (test.state == T_RUN) {
     test.elapsed = (millis() - test.tStart) / 1000;
     if (m.v < test.vmin) test.vmin = m.v;
-    if (m.i > 0.2f) { test.iSum += m.i; test.iN++; test.sawLoad = true; test.noLoadCnt = 0; }
-    else if (test.sawLoad) test.noLoadCnt++;
+    if (m.i > 0.2f) {
+      // carico inserito a mano dopo l'avvio: R interna dal gradino, rispetto all'ultima tensione a vuoto
+      if (!test.sawLoad && test.noLoadCnt > 0) test.rintAt = millis() + 3000;
+      test.iSum += m.i; test.iN++; test.sawLoad = true; test.noLoadCnt = 0;
+    } else {
+      if (!test.sawLoad) test.vOcv = m.v;
+      test.noLoadCnt++;            // conta anche se il carico non si è mai visto
+    }
     if (m.i > test.imax) test.imax = m.i;
     if (test.rintAt && millis() >= test.rintAt) {
       if (m.i > 1.0f) { float r = (test.vOcv - m.v) / m.i; if (r > 0 && r < 0.5f) test.rint = r; }
@@ -477,7 +548,7 @@ void tick() {
     if (m.v <= cfg.cutoffV) test.cutoffCnt++; else test.cutoffCnt = 0;
     if (bmsTrip)                    testEnd("bms");      // tensione crollata a zero da sopra il cutoff: ha staccato il BMS
     else if (test.cutoffCnt >= 3)   testEnd("cutoff");
-    else if (test.noLoadCnt >= 120) testEnd("noload");
+    else if (test.noLoadCnt >= (test.sawLoad ? NOLOAD_STOP_S : NOLOAD_START_S)) testEnd("noload");
     else if (millis() - test.lastLog >= (uint32_t)cfg.logInt * 1000UL) logLine();
     if (alarms & (AL_VHIGH | AL_IHIGH | AL_THIGH)) { if (cfg.relayEn) setRelay(false); }
   } else if (alarms & (AL_VHIGH | AL_IHIGH | AL_THIGH)) {
@@ -512,14 +583,14 @@ void handleStatus() {
   float soc = m.socAh < 0 ? 0 : m.socAh / cfg.capAh * 100.0f;
 
   snprintf(jbuf, sizeof(jbuf),
-    "{\"fw\":\"%s\",\"sensor\":\"%s\",\"up\":%lu,\"v\":%.3f,\"vadc\":%.3f,\"vina\":%.3f,\"i\":%.3f,\"p\":%.1f,\"mvsh\":%.3f,\"i_med\":%.3f,\"t\":%s,"
+    "{\"fw\":\"%s\",\"sensor\":\"%s\",\"up\":%lu,\"boot\":\"%s\",\"resumed\":%d,\"v\":%.3f,\"vadc\":%.3f,\"vina\":%.3f,\"i\":%.3f,\"p\":%.1f,\"mvsh\":%.3f,\"i_med\":%.3f,\"t\":%s,"
     "\"soc\":%.1f,\"ah_rem\":%.2f,\"cap\":%.1f,\"ah_out\":%.3f,\"ah_in\":%.3f,\"wh_out\":%.1f,\"wh_in\":%.1f,"
     "\"rint\":%s,\"relay\":%d,\"ina_ok\":%d,\"alarm\":[%s],"
     "\"test\":{\"state\":\"%s\",\"name\":\"%s\",\"id\":%lu,\"ts\":%lu,\"reason\":\"%s\",\"elapsed\":%lu,\"ah\":%.4f,\"wh\":%.2f,\"vstart\":%.3f,\"vmin\":%.3f,"
     "\"iavg\":%.3f,\"imax\":%.2f,\"rint\":%s,\"cutoff\":%.2f,\"logn\":%lu},"
     "\"last\":{\"name\":\"%s\",\"id\":%lu,\"ts\":%lu,\"reason\":\"%s\",\"ah\":%.3f,\"wh\":%.1f,\"dur\":%lu,\"iavg\":%.3f,\"vstart\":%.3f,\"vend\":%.3f,\"rint\":%s},"
     "\"wifi\":{\"ap_ip\":\"%s\",\"sta_ip\":\"%s\",\"ssid\":\"%s\",\"rssi\":%d}}",
-    FW_VERSION, SENSOR_NAME, (unsigned long)(millis() / 1000), m.v, m.vAdc, m.vIna, m.i, m.p, m.mvShunt,
+    FW_VERSION, SENSOR_NAME, (unsigned long)(millis() / 1000), bootReasonStr(), testResumed ? 1 : 0, m.v, m.vAdc, m.vIna, m.i, m.p, m.mvShunt,
     (cfg.invertI ? -1.0f : 1.0f) * (m.mvShuntAvg * (SHUNT_RATED_A / SHUNT_RATED_MV) * cfg.iGain + cfg.iOff), tb,
     soc, m.socAh < 0 ? 0 : m.socAh, cfg.capAh, m.ahOut, m.ahIn, m.whOut, m.whIn,
     rb, relayState, m.inaOk, al,
@@ -603,7 +674,7 @@ void handleTest() {
     testStart(nm.c_str(), (uint32_t)server.arg("ts").toInt());
   }
   else if (c == "stop") { if (test.state == T_RUN) testEnd("manual"); }
-  else if (c == "reset") { if (test.state != T_RUN) test = Test(); }
+  else if (c == "reset") { if (test.state != T_RUN) { test = Test(); testResumed = false; clearRun(); } }
   else { server.send(400, "text/plain", "cmd?"); return; }
   server.send(200, "text/plain", "OK");
 }
@@ -680,6 +751,55 @@ bool historyDelete(uint32_t id) {
   LittleFS.remove(path);
   return found;
 }
+// rinomina un test: riga dello storico, intestazione del suo CSV, e "ultimo test" se e' lui.
+// Il nome viene ripulito (solo lettere, cifre, spazio e _-.+()) cosi' non serve l'escape JSON.
+bool historyRename(uint32_t id, const String &rawName) {
+  char nm[24]; size_t k = 0;
+  for (size_t j = 0; j < rawName.length() && k < sizeof(nm) - 1; j++) {
+    char ch = rawName[j];
+    if (isalnum((unsigned char)ch) || ch == ' ' || ch == '_' || ch == '-' || ch == '.' || ch == '+' || ch == '(' || ch == ')') nm[k++] = ch;
+  }
+  nm[k] = 0;
+  if (!k) return false;
+  File f = LittleFS.open(HISTORY_FILE, FILE_READ);
+  if (!f) return false;
+  char key[24]; snprintf(key, sizeof(key), "{\"id\":%lu,", (unsigned long)id);
+  File t = LittleFS.open("/history.tmp", FILE_WRITE);
+  bool found = false;
+  while (f.available()) {
+    String l = f.readStringUntil('\n'); l.trim();
+    if (!l.length()) continue;
+    if (l.startsWith(key)) {
+      int a = l.indexOf("\"name\":\"");
+      int b = (a >= 0) ? l.indexOf('"', a + 8) : -1;
+      if (a >= 0 && b > a) { l = l.substring(0, a + 8) + nm + l.substring(b); found = true; }
+    }
+    t.println(l);
+  }
+  f.close(); t.close();
+  LittleFS.remove(HISTORY_FILE);
+  LittleFS.rename("/history.tmp", HISTORY_FILE);
+  if (!found) return false;
+  // intestazione del CSV: "# test <id>, batteria: <nome>, ts: <ts>"
+  char path[16]; snprintf(path, sizeof(path), "/t%lu.csv", (unsigned long)id);
+  File c = LittleFS.open(path, FILE_READ);
+  if (c) {
+    File o = LittleFS.open("/csv.tmp", FILE_WRITE);
+    String h = c.readStringUntil('\n');
+    int a = h.indexOf("batteria: "), b = h.lastIndexOf(", ts:");
+    if (a >= 0 && b > a) h = h.substring(0, a + 10) + nm + h.substring(b);
+    h.trim();
+    o.println(h);
+    uint8_t buf[256]; int n;
+    while ((n = c.read(buf, sizeof(buf))) > 0) o.write(buf, n);
+    c.close(); o.close();
+    LittleFS.remove(path);
+    LittleFS.rename("/csv.tmp", path);
+  }
+  if (last.id == id) { strncpy(last.name, nm, sizeof(last.name) - 1); last.name[sizeof(last.name) - 1] = 0; saveLast(); }
+  if (test.id == id) { strncpy(test.name, nm, sizeof(test.name) - 1); test.name[sizeof(test.name) - 1] = 0; }
+  return true;
+}
 void handleHistoryPost() {
   String c = server.arg("cmd");
   if (test.state == T_RUN) { server.send(409, "text/plain", "test in corso"); return; }
@@ -689,6 +809,12 @@ void handleHistoryPost() {
     if (!id) { server.send(400, "text/plain", "id?"); return; }
     if (!historyDelete(id)) { server.send(404, "text/plain", "test non trovato"); return; }
     Serial.printf("[STORICO] test #%lu eliminato\n", (unsigned long)id);
+  }
+  else if (c == "rename") {
+    uint32_t id = (uint32_t)server.arg("id").toInt();
+    if (!id || !server.hasArg("name")) { server.send(400, "text/plain", "id e name?"); return; }
+    if (!historyRename(id, server.arg("name"))) { server.send(404, "text/plain", "test non trovato o nome non valido"); return; }
+    Serial.printf("[STORICO] test #%lu rinominato\n", (unsigned long)id);
   }
   server.send(200, "text/plain", "OK");
 }
@@ -752,6 +878,66 @@ void handleUpdateData() {
   }
 }
 
+// ===================================================================== app Android ospitata dal tester
+// L'APK sta su LittleFS: all'avvio l'app confronta /api/app con la propria versione e, se quella
+// sul tester e' piu' recente, scarica /app.apk e chiede ad Android di installarlo (niente cavo).
+// Pubblicazione (rifiutata se c'e' un test in corso):
+//   curl -F "apk=@LiFePO4_Tester.apk" "http://<ip>/api/app/upload?version=<versionCode>"
+#define APP_APK_PATH "/app.apk"
+#define APP_TMP_PATH "/app.tmp"
+static File     appUpFile;
+static bool     appUpOk  = false;
+static uint32_t appUpVer = 0;
+void handleAppInfo() {
+  prefs.begin("app", true);
+  uint32_t ver = prefs.getUInt("ver", 0);
+  prefs.end();
+  size_t size = 0;
+  File f = LittleFS.open(APP_APK_PATH, FILE_READ);
+  if (f) { size = f.size(); f.close(); }
+  if (!size) ver = 0;
+  snprintf(jbuf, sizeof(jbuf), "{\"version\":%lu,\"size\":%lu}", (unsigned long)ver, (unsigned long)size);
+  sendNoCache();
+  server.send(200, "application/json", jbuf);
+}
+void handleAppApk() {
+  File f = LittleFS.open(APP_APK_PATH, FILE_READ);
+  if (!f || !f.size()) { if (f) f.close(); server.send(404, "text/plain", "nessuna app caricata"); return; }
+  server.streamFile(f, "application/vnd.android.package-archive");
+  f.close();
+}
+void handleAppUploadDone() {
+  if (appUpOk) server.send(200, "text/plain", "OK");
+  else server.send(400, "text/plain", "APK non valido, versione mancante, spazio insufficiente o test in corso");
+}
+void handleAppUploadData() {
+  HTTPUpload &up = server.upload();
+  if (up.status == UPLOAD_FILE_START) {
+    appUpOk = false;
+    if (appUpFile) appUpFile.close();
+    appUpVer = (uint32_t)server.arg("version").toInt();
+    if (appUpVer && test.state != T_RUN) { LittleFS.remove(APP_TMP_PATH); appUpFile = LittleFS.open(APP_TMP_PATH, FILE_WRITE); }
+  } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (!appUpFile) return;
+    // primo blocco: un APK e' un file zip, deve cominciare con "PK"
+    if (up.totalSize == 0 && !(up.currentSize >= 2 && up.buf[0] == 'P' && up.buf[1] == 'K')) { appUpFile.close(); LittleFS.remove(APP_TMP_PATH); return; }
+    if (appUpFile.write(up.buf, up.currentSize) != up.currentSize) { appUpFile.close(); LittleFS.remove(APP_TMP_PATH); }   // spazio finito
+  } else if (up.status == UPLOAD_FILE_END) {
+    if (!appUpFile) return;
+    appUpFile.close();
+    LittleFS.remove(APP_APK_PATH);
+    if (LittleFS.rename(APP_TMP_PATH, APP_APK_PATH)) {
+      prefs.begin("app", false);
+      prefs.putUInt("ver", appUpVer);
+      prefs.end();
+      appUpOk = true;
+      Serial.printf("[APP] APK versione %lu caricato (%u byte)\n", (unsigned long)appUpVer, (unsigned)up.totalSize);
+    }
+  } else if (up.status == UPLOAD_FILE_ABORTED) {
+    if (appUpFile) { appUpFile.close(); LittleFS.remove(APP_TMP_PATH); }
+  }
+}
+
 void webSetup() {
   server.enableCORS(true);
   server.on("/", HTTP_GET, []() { server.send_P(200, "text/html", WEB_INDEX); });
@@ -776,6 +962,9 @@ void webSetup() {
   server.on("/api/reboot",   HTTP_POST, handleReboot);
   server.on("/api/trend",    HTTP_GET,  handleTrend);
   server.on("/api/update",   HTTP_POST, handleUpdateDone, handleUpdateData);
+  server.on("/api/app",      HTTP_GET,  handleAppInfo);
+  server.on("/app.apk",      HTTP_GET,  handleAppApk);
+  server.on("/api/app/upload", HTTP_POST, handleAppUploadDone, handleAppUploadData);
   // Android crede di avere internet -> usa il Wi-Fi del tester come rete predefinita
   server.on("/generate_204", []() { server.send(204, "text/plain", ""); });
   server.on("/gen_204",      []() { server.send(204, "text/plain", ""); });
@@ -926,6 +1115,9 @@ void setup() {
   clampSoc();
   wifiSetup();
   webSetup();
+  Serial.printf("[BOOT] motivo riavvio: %s\n", bootReasonStr());
+  for (int k = 0; k < 15; k++) { sample(); delay(SAMPLE_MS); }   // tensione valida prima di decidere sul test
+  if (!resumeRun()) Serial.println("[TEST] nessun test da riprendere");
   Serial.println("[OK] pronto");
 }
 
