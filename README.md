@@ -116,3 +116,7 @@ tools/           CSV comparison (matplotlib), API simulator, icon generator
 ## Safety
 
 A 100 Ah LiFePO4 pack can deliver thousands of amps into a short circuit. Fit a fuse on B+ close to the battery, size cables for the test current and read [docs/HARDWARE.md](docs/HARDWARE.md) before wiring. Hobby project, provided as is, without warranty.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

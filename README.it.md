@@ -43,3 +43,7 @@ Nessuna autenticazione: tenere il tester su una rete fidata, mai esposto con un 
 ## Sicurezza
 
 Un pacco LiFePO4 da 100 Ah può erogare migliaia di ampere in corto circuito: fusibile su B+ vicino alla batteria, cavi dimensionati e leggere [docs/HARDWARE.it.md](docs/HARDWARE.it.md) prima di cablare. Progetto amatoriale, senza alcuna garanzia.
+
+## Licenza
+
+MIT, vedi [LICENSE](LICENSE).
